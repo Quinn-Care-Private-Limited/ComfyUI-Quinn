@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from torchvision import transforms
 from .pipeline_flux_fill import FluxFillPipeline
+from .transformer_flux import FluxTransformer2DModel
 
 import comfy.model_management as mm
 from .utils import convert_diffusers_flux_lora
@@ -48,6 +49,39 @@ class LoadCatvtonFlux:
             transformer=pipe.transformer,
         )
         pipe.transformer.to(torch.bfloat16)
+        print('Loading Finished!')
+
+        model = {"pipe": pipe}
+        
+        return (model,)
+    
+class LoadCatvtonFluxBeta:
+
+    RETURN_TYPES = ("CatvtonFluxModel",)
+    FUNCTION = "load_catvton_flux_beta"
+    CATEGORY = "CatvtonFluxWrapper"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+        },
+    } 
+    
+    def load_catvton_flux_beta(self):
+
+        load_device = mm.text_encoder_device()
+        offload_device = mm.text_encoder_offload_device()
+
+        print("Start loading Base catvton model")
+        transformer = FluxTransformer2DModel.from_pretrained("xiaozaa/catvton-flux-beta", torch_dtype=torch.bfloat16)
+
+        pipe = FluxFillPipeline.from_pretrained(
+            "black-forest-labs/FLUX.1-Fill-dev",
+            transformer=transformer,
+            torch_dtype=torch.bfloat16
+        ).to(load_device)
+
         print('Loading Finished!')
 
         model = {"pipe": pipe}
